@@ -1,23 +1,22 @@
 package de.szut.dqi12.sqlitebrowser.view;
 
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JTree;
-import javax.swing.SwingConstants;
+import javax.swing.JTabbedPane;
 
-import settings.*;
+import de.szut.dqi12.sqlitebrowser.settings.Settings;
 
 public class View extends JFrame {
 	
 	private static final long serialVersionUID = -1206806827748738729L;
 	private JPanel mainPanel;
+	private JTabbedPane tabPane;
+	private DataBaseTab defaultDataBaseTab;
 	
 	
 	public static void main(String[] args) {
@@ -33,41 +32,38 @@ public class View extends JFrame {
 		mainPanel = createMainPanel();
 		setContentPane(mainPanel);
 		setVisible(true);
+		
 	}
 	
 	public JPanel createMainPanel() {
-		JPanel panel = new JPanel();
-		panel.setLayout(new BorderLayout(0, 0));
-		JPanel menuPanel = new JPanel();
-		menuPanel.setLayout(new GridLayout(2, 1));
-		JPanel dataPanel = new JPanel();
-		dataPanel.setLayout(new BorderLayout(0, 0));
-		JPanel limitPanel = new JPanel();
-		limitPanel.setLayout(new GridLayout(1, 3, 0, 10));
-		panel.add(menuPanel, SwingConstants.NORTH);
-		panel.add(dataPanel, SwingConstants.CENTER);
-		dataPanel.add(limitPanel, SwingConstants.SOUTH);
-		
-		
-		JLabel connection = new JLabel("not connected");
-		connection.setHorizontalAlignment(SwingConstants.RIGHT);
-		
-		JTree dataBaseTree = new JTree();
+		JPanel mainPanel = new JPanel(new BorderLayout(10, 0));
+		tabPane = new JTabbedPane(JTabbedPane.TOP, JTabbedPane.SCROLL_TAB_LAYOUT);
 		
 		JMenuBar menuBar = new JMenuBar();
 		JMenu file = new JMenu();
+		file.setText("File");
 		JMenu edit = new JMenu();
+		edit.setText("Edit");
 		JMenu help = new JMenu();
+		help.setText("Help");
 		JMenuItem openDataBase = new JMenuItem();
+		openDataBase.setText("Open");
 		menuBar.add(file);
 		menuBar.add(edit);
 		menuBar.add(help);
 		file.add(openDataBase);
 		
-		panel.add(connection, BorderLayout.SOUTH);
-		panel.add(dataBaseTree, BorderLayout.WEST);
-		dataPanel.add()
+		DataBaseTab defaultDataBaseTab = new DataBaseTab();
 		
-		return panel;
+		mainPanel.add(menuBar, BorderLayout.NORTH);
+		mainPanel.add(tabPane, BorderLayout.CENTER);
+		tabPane.addTab("Database", defaultDataBaseTab);
+		
+		return mainPanel;
+	}
+	
+	public void loadDataBase(String dataBaseName, String[] tables) {
+		tabPane.add(dataBaseName, new DataBaseTab(dataBaseName, tables));
+		tabPane.remove(defaultDataBaseTab);
 	}
 }
