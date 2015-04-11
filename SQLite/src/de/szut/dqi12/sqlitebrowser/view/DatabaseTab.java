@@ -6,7 +6,9 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.text.NumberFormat;
 
 import javax.swing.JButton;
@@ -20,17 +22,21 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTree;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.text.NumberFormatter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import de.szut.dqi12.sqlitebrowser.model.Query;
+import de.szut.dqi12.sqlitebrowser.model.Database;
+import de.szut.dqi12.sqlitebrowser.model.Message;
+import de.szut.dqi12.sqlitebrowser.model.Table;
 import de.szut.dqi12.sqlitebrowser.settings.Settings;
 
 public class DatabaseTab extends JPanel {
 	
 	private static final long serialVersionUID = 8258966354246805261L;
 	private String name;
+	private String suffix = "";
 	private JLabel connectionLabel;
 	private JTable dataTable;
 	private JTree databaseTree;
@@ -38,19 +44,21 @@ public class DatabaseTab extends JPanel {
 	private JFormattedTextField upperLimit;
 	private Transmitter transmitter;
 	private int iD;
+	private int frameID;
 	
-	public DatabaseTab(String databaseName) {
+	public DatabaseTab(int iD, String databaseName) {
 		this.name = databaseName;
+		this.iD = iD;
 		createTab();
 	}
 	
-	public DatabaseTab(String databaseName, String[] tables, Transmitter transmitter, int iD) {
+	public DatabaseTab(Database database, Transmitter transmitter, int iD) {
 		this.transmitter = transmitter;
 		this.iD = iD;
 		createTab();
-		this.name = databaseName;
-		createTree(tables);
-		connectionLabel.setText(databaseName + " loaded");
+		this.name = database.getDatabaseName();
+		createTree(database.getDataTables());
+		connectionLabel.setText(name + " loaded");
 	}
 	
 	public void createTab() {
@@ -88,27 +96,54 @@ public class DatabaseTab extends JPanel {
 			if (node != null) {
 				if(node.getChildCount() == 0) {
 					try {
-						transmitter.transmit(new Query("select * from " + node.getUserObject(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD));
+						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
 					}
 					catch (NumberFormatException exception) {
-						transmitter.transmit(new Query("select * from " + node.getUserObject(), 0, 0, iD));
+						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', 0, 0, iD, frameID));
 					}
 				}
 			}
 		});
 		
+		
 		dataTable = new JTable();
 		JScrollPane scrollPaneTable = new JScrollPane(dataTable);
 		
+		JCheckBox limitCheckBox = new JCheckBox();
+		limitCheckBox.setText("LIMIT");
+		
 		JTextField queryField = new JTextField();
+		queryField.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent event) {
+				if (event.getKeyCode() == KeyEvent.VK_ENTER) {
+					if (!queryField.getText().equals("") && limitCheckBox.isSelected()) {
+						try {
+							transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
+						}
+						catch (NumberFormatException exception) {
+							transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+						}
+					}
+					else {
+						transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+					}
+				}
+			}
+		});
 		
 		JButton queryButton = new JButton("Send");
 		queryButton.addActionListener(e -> {
-			try {
-				transmitter.transmit(new Query(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD));
+			if (!queryField.getText().equals("") && limitCheckBox.isSelected()) {
+				try {
+					transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
+				}
+				catch (NumberFormatException exception) {
+					transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+				}
 			}
-			catch (NumberFormatException exception) {
-				transmitter.transmit(new Query(queryField.getText(), 0, 0, iD));
+			else {
+				transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
 			}
 		});
 		
@@ -178,9 +213,6 @@ public class DatabaseTab extends JPanel {
 
 		upperLimit = new JFormattedTextField(formatter);
 //		upperLimit.addKeyListener(limitListener);
-		
-		JCheckBox limitCheckBox = new JCheckBox();
-		limitCheckBox.setText("LIMIT");
 
 		tablePanel.add(scrollPaneTree, BorderLayout.CENTER);
 		dataPanel.add(scrollPaneTable, BorderLayout.CENTER);
@@ -200,9 +232,17 @@ public class DatabaseTab extends JPanel {
 		((DefaultTreeModel) databaseTree.getModel()).setRoot(root);
 	}
 	
-	
-	
-	public void setTableContent(String[][] content) {
+	public void setTableContent(Table table) {
+		String[][] content = table.getTableContent();
+		dataTable.setModel(new DefaultTableModel(content.length, content[0].length) {
+			private static final long serialVersionUID = 5005712245985643723L;
+
+			@Override
+			public boolean isCellEditable(int rowIndex, int columnIndex) {
+				return false;
+			}
+		});
+		((DefaultTableModel) dataTable.getModel()).setColumnIdentifiers(table.getTableHeaders());
 		for (int x = 0; x < content.length; x++) {
 			for (int y = 0; y < content[x].length; y++) {
 				dataTable.getModel().setValueAt(content[x][y], x, y);
@@ -214,7 +254,28 @@ public class DatabaseTab extends JPanel {
 		return name;
 	}
 	
+	public String getSuffix() {
+		return suffix;
+	}
+
+	public void setSuffix(String suffix) {
+		this.suffix = suffix;
+	}
+	
+	public String getTabTitle() {
+		return name + suffix;
+	}
+	
 	public int getID() {
 		return iD;
+	}
+	
+	public void setFrameID(int iD) {
+		frameID = iD;
+	}
+
+	public void closeConnection() {
+		// TODO Auto-generated method stub
+		
 	}
 }
