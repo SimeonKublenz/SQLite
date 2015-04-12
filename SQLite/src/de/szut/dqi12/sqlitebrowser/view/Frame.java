@@ -218,10 +218,10 @@ public class Frame extends JFrame {
 	public void addTab(DatabaseTab tab) {
 		String suffix = getSuffix(tab.getTabName());
 		tab.setSuffix(suffix);
-		tabPane.add(tab.getTabName(), tab);
+		tabPane.add(tab.getTabTitle(), tab);
 		tabs.put(tab.getID(), tab);
 		if (tabs.containsValue(defaultTab)) {
-			tabPane.removeTabAt(tabPane.indexOfTab(defaultTab.getTabName()));
+			tabPane.removeTabAt(tabPane.indexOfTab(defaultTab.getTabTitle()));
 			tabs.remove(defaultTab.getID());
 		}
 		tabs.put(tab.getID(), tab);
@@ -275,6 +275,7 @@ public class Frame extends JFrame {
 				suffix = "(" + count +")";
 			}
 		}
+		System.out.println(suffix);
 		return suffix;
 	}
 	

@@ -274,6 +274,6 @@ public class DatabaseTab extends JPanel {
 	 * @return Die Breite des Baumes
 	 */
 	public int getTreeWidth() {
-		return splitPane.getDividerLocation();
+		return splitPane.getDividerLocation() - 1;
 	}
 }
