@@ -26,7 +26,6 @@ import javax.swing.tree.DefaultTreeModel;
 import de.szut.dqi12.sqlitebrowser.model.Database;
 import de.szut.dqi12.sqlitebrowser.model.Message;
 import de.szut.dqi12.sqlitebrowser.model.Table;
-import de.szut.dqi12.sqlitebrowser.settings.Settings;
 
 public class DatabaseTab extends JPanel {
 	
@@ -168,62 +167,8 @@ public class DatabaseTab extends JPanel {
         NumberFormatter formatter = new NumberFormatter(format);
         formatter.setAllowsInvalid(false);
         
-        lowerLimit = new JFormattedTextField(formatter) {
-        	protected void keyEvent(final KeyEvent e) {
-        		
-        	}
-        };
-//        	private static final long serialVersionUID = 1664905922027529040L;
-//        	@Override  
-//        	protected void processFocusEvent(final FocusEvent e) {  
-//        		if (e.isTemporary())  
-//        			return;  
-//         
-//        		if (e.getID() == FocusEvent.FOCUS_LOST && (getText() == null || getText().isEmpty())) 
-//        			setValue(null);  
-//         
-//        		super.processFocusEvent(e);  
-//        	}
-//        };
-		
-//        KeyListener limitListener = new KeyListener() {
-//			String old = "";
-//			@Override
-//			public void keyPressed(KeyEvent event) {}
-//			@Override
-//			public void keyReleased(KeyEvent event) {}
-//			
-//			@Override 
-//			public void keyTyped(KeyEvent event) {
-//				String s = ((JFormattedTextField) event.getComponent()).getText();
-//				if (old.length() == 1 && (event.getKeyChar() == '' || event.getKeyChar() == '')) {
-//					((JFormattedTextField) event.getComponent()).setText("0");
-//				}
-//				if (event.getKeyChar() == '' || event.getKeyChar() == '') {
-//					if (oneChar) {
-//						((JFormattedTextField) event.getComponent()).setText("0");
-//					}
-//					if (((JFormattedTextField) event.getComponent()).getText().length() == 1) {
-//						oneChar = true;
-//					}
-//				}
-//				else {
-//					if (((JFormattedTextField) event.getComponent()).getText().length() == 1) {
-//						oneChar = true;
-//					}
-//					else if (((JFormattedTextField) event.getComponent()).getText().length() > 1) {
-//						oneChar = false;
-//					}
-//				}
-//				old = ((JFormattedTextField) event.getComponent()).getText();
-//			}
-//		};
-        
-//		lowerLimit = new JFormattedTextField(formatter);
-//		lowerLimit.addKeyListener(limitListener);
-
+        lowerLimit = new JFormattedTextField(formatter);
 		upperLimit = new JFormattedTextField(formatter);
-//		upperLimit.addKeyListener(limitListener);
 
 		tablePanel.add(scrollPaneTree, BorderLayout.CENTER);
 		dataPanel.add(scrollPaneTable, BorderLayout.CENTER);

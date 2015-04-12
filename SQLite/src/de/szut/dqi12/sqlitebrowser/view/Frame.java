@@ -55,7 +55,7 @@ public class Frame extends JFrame {
 			public void windowClosing(WindowEvent event) {
 				closeWindow();
 			}
-
+			
 			@Override
 			public void windowActivated(WindowEvent event) {}
 			@Override
