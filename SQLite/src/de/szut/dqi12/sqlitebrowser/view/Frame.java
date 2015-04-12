@@ -3,7 +3,6 @@ package de.szut.dqi12.sqlitebrowser.view;
 import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.MenuItem;
-import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
@@ -23,6 +22,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import de.szut.dqi12.sqlitebrowser.model.Database;
 import de.szut.dqi12.sqlitebrowser.model.Message;
 import de.szut.dqi12.sqlitebrowser.model.Table;
+import de.szut.dqi12.sqlitebrowser.settings.Settings;
 
 public class Frame extends JFrame {
 	
@@ -35,24 +35,27 @@ public class Frame extends JFrame {
 	private GUI gui;
 	private HashMap<Integer, DatabaseTab> tabs = new HashMap<Integer, DatabaseTab>();
 	
-	public Frame(Transmitter transmitter, GUI gui, String name, Rectangle rectangle) {
+	/**
+	 * Der Konstruktor des Frames
+	 * @param transmitter der Transmitter mit wessen hilfe übertragen werden soll
+	 * @param gui Die GUI auf dem sich das Frame befindet
+	 * @param settings die Settings welche angewandt werden sollen
+	 */
+	public Frame(Transmitter transmitter, GUI gui, Settings settings) {
 		this.transmitter = transmitter;
 		this.gui = gui;
-		setTitle(name);
-		setBounds(rectangle);
+		setTitle("SQLite");
+		setBounds(settings.getRectangle());
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		mainPanel = createMainPanel();
+		mainPanel = createMainPanel(settings);
 		setContentPane(mainPanel);
 		setVisible(true);
 		addWindowListener(new WindowListener() {
 			@Override
 			public void windowClosing(WindowEvent event) {
-				for (int index = 0; index < tabPane.getTabCount(); index++) {
-					((DatabaseTab) tabPane.getComponentAt(index)).closeConnection();
-				}
-				gui.closeWindow((Frame) event.getComponent());
+				closeWindow();
 			}
-			
+
 			@Override
 			public void windowActivated(WindowEvent event) {}
 			@Override
@@ -66,37 +69,38 @@ public class Frame extends JFrame {
 			@Override
 			public void windowOpened(WindowEvent event) {}
 		});
-//		String[] e = { "qf", "wwtg", "wer", "wt" }; //TODO Remove
-//		String[] f = {"wwtg", "wer", "wt" }; //TODO Remove
-//		loaddatabase("Baum", e, 0); //TODO Remove
-//		loaddatabase("Zwiebel", f, 1); //TODO Remove
 		file = new JFileChooser(new File("."));
 		file.removeChoosableFileFilter(file.getChoosableFileFilters()[0]);
-		file.setFileFilter(new FileNameExtensionFilter("Database File","db3"));
+		file.setFileFilter(new FileNameExtensionFilter("Datenbank Datei","db3"));
 	}
 	
-	public JLayeredPane createMainPanel() {
+	/**
+	 * Erstellt das Mainpanel
+	 * @param settings Die Settings welche angewandt werden sollen
+	 * @return Das Mainpanel
+	 */
+	public JLayeredPane createMainPanel(Settings settings) {
 		JLayeredPane mainPanel = new JLayeredPane();
 		mainPanel.setLayout(new BorderLayout(0, 0));
 		
-		numeratedPopupMenu rightclickMenu = new numeratedPopupMenu();
+		NumeratedPopupMenu rightclickMenu = new NumeratedPopupMenu();
 		
 		MenuItem newWindow = new MenuItem("In neues Fenster verschieben");
 		newWindow.addActionListener(e -> {
-			int index = ((numeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
+			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
 			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(index);
 			if (tab.getID() != -1) {
 				removeTab(tab.getID());
-				gui.createFrame(getTitle(), tab, this.getBounds());
+				gui.createFrame(tab, new Settings(this.getBounds(), tab.getTreeWidth()));
 			}
 			else {
-				gui.createFrame(getTitle(), this.getBounds());
+				gui.createFrame(new Settings(this.getBounds(), tab.getTreeWidth()));
 			}
 		});
 		
 		MenuItem close = new MenuItem("Schließen");
 		close.addActionListener(e -> {
-			int index = ((numeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
+			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
 			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(index);
 			if (tab.getID() != -1) {
 				removeTab(tab.getID());
@@ -105,7 +109,7 @@ public class Frame extends JFrame {
 		});
 		MenuItem closeOther = new MenuItem("Andere Schließen");
 		closeOther.addActionListener(e -> {
-			int index = ((numeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
+			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
 			for (int i = 0; i < tabPane.getTabCount(); i++) {
 				if (i != index) {
 					DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(i);
@@ -166,13 +170,18 @@ public class Frame extends JFrame {
 		});
 		
 		JMenuBar menuBar = new JMenuBar();
-		JMenu file = new JMenu("File");
-		JMenuItem opendatabase = new JMenuItem("Open");
-		opendatabase.addActionListener(e -> {
+		JMenu file = new JMenu("Datei");
+		JMenuItem openDatabase = new JMenuItem("Öffnen");
+		openDatabase.addActionListener(e -> {
 			selectDatabase();
 		});
-		JMenuItem closedatabase = new JMenuItem("Close");
-		closedatabase.addActionListener(e -> {
+		JMenuItem newFrame = new JMenuItem("neues Fenster");
+		newFrame.addActionListener(e -> {
+			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber());
+			gui.createFrame(new Settings(this.getBounds(), tab.getTreeWidth()));
+		});
+		JMenuItem closeDatabase = new JMenuItem("Schließen");
+		closeDatabase.addActionListener(e -> {
 			DatabaseTab tab = ((DatabaseTab) tabPane.getComponentAt(tabPane.getSelectedIndex()));
 			if (tab.getID() != -1) {
 				tab.closeConnection();
@@ -180,20 +189,32 @@ public class Frame extends JFrame {
 				tabPane.removeTabAt(tabPane.getSelectedIndex());
 			}
 		});
+		JMenuItem closeFrame = new JMenuItem("Beenden");
+		closeFrame.addActionListener(e -> {
+			closeWindow();
+			dispose();
+		});
 		menuBar.add(file);
-		file.add(opendatabase);
-		file.add(closedatabase);
+		file.add(openDatabase);
+		file.add(newFrame);
+		file.addSeparator();
+		file.add(closeDatabase);
+		file.add(closeFrame);
 		
 		mainPanel.add(menuBar, BorderLayout.NORTH);
 		mainPanel.add(tabPane, BorderLayout.CENTER);
 		
-		defaultTab = new DatabaseTab(-1, " Database ");
+		defaultTab = new DatabaseTab(-1, " Datenbank ", settings.getTreeWidth());
 		tabPane.addTab(defaultTab.getTabName(), defaultTab);
 		tabs.put(defaultTab.getID(), defaultTab);
 		
 		return mainPanel;
 	}
 	
+	/**
+	 * Fügt dem Frame einen tab hinzu
+	 * @param tab der hinzuzufügende tab
+	 */
 	public void addTab(DatabaseTab tab) {
 		String suffix = getSuffix(tab.getTabName());
 		tab.setSuffix(suffix);
@@ -206,6 +227,10 @@ public class Frame extends JFrame {
 		tabs.put(tab.getID(), tab);
 	}
 	
+	/**
+	 * Entfernt einen Tab
+	 * @param iD Die ID des zu entfernenden Tabs
+	 */
 	public void removeTab(int iD) {
 		if (tabs.containsKey(iD)) {
 			if (tabs.size() == 1) {
@@ -217,15 +242,22 @@ public class Frame extends JFrame {
 		}
 	}
 	
+	/**
+	 * Lädt eine Datenbank in einen neuen Tab
+	 * @param database Die zu ladende Datenbank
+	 * @param iD Die ID des Tabs
+	 */
 	public void loadDatabase(Database database, int iD) {
-		DatabaseTab tab = new DatabaseTab(database, transmitter, iD);
+		DatabaseTab focusedTab = ((DatabaseTab) tabPane.getComponentAt(tabPane.getSelectedIndex()));
+		DatabaseTab tab = new DatabaseTab(database, transmitter, iD, focusedTab.getTreeWidth());
 		addTab(tab);
 	}
 	
-//	public void showTable(String[][] table, String tableName) {
-//		tabPane.getComponents();
-//	}
-	
+	/**
+	 * Gibt das Suffix  zurück das ein neuer Tab mit dem übergebenen Namen haben muss
+	 * @param tableName Der Name des neuen tabs
+	 * @return Das Suffix das der Tab braucht
+	 */
 	private String getSuffix(String tableName) {
 		String suffix = "";
 		boolean end = false;
@@ -246,6 +278,9 @@ public class Frame extends JFrame {
 		return suffix;
 	}
 	
+	/**
+	 * Öffent das Dateiauswahlfenster und sendet gewählte die Datei
+	 */
 	private void selectDatabase() {
 		file.showOpenDialog(null);
 		if (file.getSelectedFile() != null && file.getSelectedFile().getName().endsWith(".db3")) {
@@ -253,8 +288,33 @@ public class Frame extends JFrame {
 		}
 	}
 	
-
-	public void showTable(Table table, int iD, int frameID) {
+	/**
+	 * Setzt den Tabelleninhalt des Tabs mit gewählter ID
+	 * @param table Anzuzeigende Tabelle
+	 * @param iD ID des Tabs
+	 */
+	public void showTable(Table table, int iD) {
 		tabs.get(iD).setTableContent(table);
+	}
+	
+	/**
+	 * Schließt eine Tab und vordert ihn auf seine Connection zu schließen
+	 */
+	private void closeWindow() {
+		gui.closeWindow(this);
+		for (int index = 0; index < tabPane.getTabCount(); index++) {
+			DatabaseTab tab = ((DatabaseTab) tabPane.getComponentAt(index));
+			if (tab.getID() != -1) {
+				tab.closeConnection();
+			}
+		}
+	}
+	
+	/**
+	 * Gibt die Breite des Baumes des aktuell gewählten Tabs
+	 * @return Die Breite des Baumes des aktuell gewählten Tabs
+	 */
+	public int getTreeWidth() {
+		return ((DatabaseTab) tabPane.getComponentAt(tabPane.getSelectedIndex())).getTreeWidth();
 	}
 }

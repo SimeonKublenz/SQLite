@@ -1,10 +1,35 @@
 package de.szut.dqi12.sqlitebrowser.settings;
 
+import java.awt.Rectangle;
+
 public class Settings {
-	public static String NAME = "SQLite";
-	public static int WINDOWWIDTH = 800;
-	public static int WINDOWHEIGHT = 620;
-	public static int WINDOWPOSITIONX = 800;
-	public static int WINDOWPOSITIONY = 620;
-	public static int TREEWIDTH = 120;
+	
+	private Rectangle rectangle;
+	private int treeWidth;
+	
+	/**
+	 * 
+	 * @param rectangle
+	 * @param treeWith
+	 */
+	public Settings(Rectangle rectangle, int treeWith) {
+		this.rectangle = rectangle;
+		this.treeWidth = treeWith;
+	}
+
+	/**
+	 * Gibt die Position und Größe und Position als Rectangle zurück
+	 * @return Der Rectangle
+	 */
+	public Rectangle getRectangle() {
+		return rectangle;
+	}
+
+	/**
+	 * Gibt die Breite des Baumes zurück
+	 * @return Die Breite des Baumes
+	 */
+	public int getTreeWidth() {
+		return treeWidth;
+	}
 }

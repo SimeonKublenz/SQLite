@@ -13,14 +13,17 @@ public class Connection {
 	private int start;
 	private int end;
 	
+	/**
+	 * Der Konstruktor der Connection
+	 * @param file die zu ladende Datenbankdatei
+	 */
 	public Connection(File file) {
 		this.file = file;
 	}
 	
 	/**
-	 * Lädt eine Datenbank und gibt die Namen aller Tabellen zurück
-	 * @param path = Pfad der Datenbank
-	 * @return Array aller Tabellennamen
+	 * Lädt eine Datenbank und gibt ein Datenbankobjekt zurück
+	 * @return das Datenbankobjekt der geladenen Datenbank
 	 */
 	public Database loadDatabase() {
 		boolean exception = false;
@@ -33,35 +36,41 @@ public class Connection {
 		}
 		
 		ArrayList<String> tables = new ArrayList<String>();
-			try {
-				DatabaseMetaData meta = connection.getMetaData();
-				ResultSet res = meta.getTables(null, null, "%", null);
-				while (res.next()) {
-					tables.add(res.getString("TABLE_NAME"));
-				}
-				res.close();
+		try {
+			DatabaseMetaData meta = connection.getMetaData();
+			ResultSet res = meta.getTables(null, null, "%", null);
+			while (res.next()) {
+				tables.add(res.getString("TABLE_NAME"));
 			}
-			catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			res.close();
 		}
-		return new Database(file.getName().substring(0, file.getName().lastIndexOf(".")) , tables.toArray(new String[tables.size()]));
+		catch (SQLException e) {
+			exception = true;
+		}
+		if (!exception) {
+			return new Database(file.getName().substring(0, file.getName().lastIndexOf(".")) , tables.toArray(new String[tables.size()]));
+		}
+		else {
+			return null;
+		}
 	}
 	
 	/**
 	 * Führt eine SQL-Query aus
-	 * @param query = Auszuführende Query
+	 * @param query Auszuführende Query
 	 */
 	private void executeQuery(String query) {
 		try {
 			resultSet = statement.executeQuery(query);
 		}
-		catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		catch (SQLException e) {}
 	}
 	
+	/**
+	 * Führt eine SQL-Query aus
+	 * @param message Nachricht welches die Query und einige Randinformationen enthällt
+	 * @return tabellenobjekt welches die Tabelle enthällt
+	 */
 	public Table executeQuery(Message message) {
 		String queryText = message.getQuery();
 		start = message.getStart();
@@ -83,6 +92,7 @@ public class Connection {
 	private Table getTableData() {
 		ArrayList<String[]> data =  new ArrayList<String[]>();
 		String[] columnHeaders = getColumnHeaders();
+		boolean exception = false;
 		try {
 			while(resultSet.next()) {
 				data.add(new String[resultSet.getMetaData().getColumnCount()]);
@@ -91,12 +101,20 @@ public class Connection {
 				}
 			}
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			exception = true;
 		}
-		return new Table(columnHeaders, (String[][]) data.toArray(new String[data.size()][]));
+		if (!exception && columnHeaders != null) {
+			return new Table(columnHeaders, (String[][]) data.toArray(new String[data.size()][]));
+		}
+		else {
+			return null;
+		}
 	}
 	
+	/**
+	 * Gibt die Zeilenheader der Tabelle zurück
+	 * @return die Zeilenheader
+	 */
 	private String[] getColumnHeaders() {
 		String[] columnHeaders = null;
 		try {
@@ -106,35 +124,22 @@ public class Connection {
 			}
 		}
 		catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			return null;
 		}
 		return columnHeaders;
 	}
 	
 	/**
-	 * Gibt den Namen der Datenbank zurück
-	 * @return Name der Datenbank
+	 * Beendet eine Verbindug
+	 * @return gibt true zurück wenn die Verbindung nicht geschlossen werden konnte
 	 */
-	public String getDatabaseName() {
-		try {
-		    ResultSet catalogs = connection.getMetaData().getCatalogs();
-		    while (catalogs.next()) {
-		        String strg = catalogs.getString("TABLE_CAT");
-		    }
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return null;
-	}
-	
-	public void close() {
+	public boolean close() {
 		try {
 			connection.close();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}
+		catch (SQLException e) {
+			return true;
+		}
+		return false;
 	}
 }

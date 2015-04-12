@@ -3,12 +3,8 @@ package de.szut.dqi12.sqlitebrowser.view;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.text.NumberFormat;
 
 import javax.swing.JButton;
@@ -35,6 +31,7 @@ import de.szut.dqi12.sqlitebrowser.settings.Settings;
 public class DatabaseTab extends JPanel {
 	
 	private static final long serialVersionUID = 8258966354246805261L;
+	private JSplitPane splitPane;
 	private String name;
 	private String suffix = "";
 	private JLabel connectionLabel;
@@ -46,25 +43,42 @@ public class DatabaseTab extends JPanel {
 	private int iD;
 	private int frameID;
 	
-	public DatabaseTab(int iD, String databaseName) {
+	/**
+	 * Der Konstruktor des DefaultDatabaseTabs
+	 * @param iD die ID des Tabs
+	 * @param databaseName der Name der Datenbank
+	 * @param treeWidth Die Breite des Baumes
+	 */
+	public DatabaseTab(int iD, String databaseName, int treeWidth) {
 		this.name = databaseName;
 		this.iD = iD;
-		createTab();
+		createTab(treeWidth);
 	}
 	
-	public DatabaseTab(Database database, Transmitter transmitter, int iD) {
+	/**
+	 * Der Konstruktor des DatabaseTabs
+	 * @param database die Datenbank welche angezeigt werden soll
+	 * @param transmitter der Name der Datenbank
+	 * @param iD die ID des Tabs
+	 * @param treeWidth Die Breite des Baumes
+	 */
+	public DatabaseTab(Database database, Transmitter transmitter, int iD, int treeWidth) {
 		this.transmitter = transmitter;
 		this.iD = iD;
-		createTab();
+		createTab(treeWidth);
 		this.name = database.getDatabaseName();
 		createTree(database.getDataTables());
-		connectionLabel.setText(name + " loaded");
+		connectionLabel.setText(name + " geladen");
 	}
 	
-	public void createTab() {
+	/**
+	 * Erstellt den Tab
+	 * @param treeWidth Die Breite des Baumes
+	 */
+	public void createTab(int treeWidth) {
 		setLayout(new BorderLayout());
 		
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		JPanel tablePanel = new JPanel();
 		tablePanel.setLayout(new BorderLayout(0, 0));
 		JPanel dataPanel = new JPanel();
@@ -83,23 +97,23 @@ public class DatabaseTab extends JPanel {
 		dataPanel.add(outerLimitPanel, BorderLayout.SOUTH);
 		outerLimitPanel.add(innerLimitPanel, BorderLayout.CENTER);
 		
-		connectionLabel = new JLabel("not connected");
+		connectionLabel = new JLabel("nicht verbunden");
 		connectionLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 		connectionLabel.setPreferredSize(new Dimension(0,20));
 		
 		databaseTree = new JTree();
 		((DefaultTreeModel) databaseTree.getModel()).setRoot(null);
 		JScrollPane scrollPaneTree = new JScrollPane(databaseTree);
-		scrollPaneTree.setPreferredSize(new Dimension(Settings.TREEWIDTH, 0));
+		scrollPaneTree.setPreferredSize(new Dimension(treeWidth, 0));
 		databaseTree.addTreeSelectionListener(e -> {
 			DefaultMutableTreeNode node = (DefaultMutableTreeNode) databaseTree.getLastSelectedPathComponent();
 			if (node != null) {
 				if(node.getChildCount() == 0) {
 					try {
-						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
+						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID, false));
 					}
 					catch (NumberFormatException exception) {
-						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', 0, 0, iD, frameID));
+						transmitter.transmit(new Message("select * from " + '"' + node.getUserObject() + '"', 0, 0, iD, frameID, false));
 					}
 				}
 			}
@@ -119,31 +133,31 @@ public class DatabaseTab extends JPanel {
 				if (event.getKeyCode() == KeyEvent.VK_ENTER) {
 					if (!queryField.getText().equals("") && limitCheckBox.isSelected()) {
 						try {
-							transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
+							transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID, true));
 						}
 						catch (NumberFormatException exception) {
-							transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+							transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID, true));
 						}
 					}
 					else {
-						transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+						transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID, true));
 					}
 				}
 			}
 		});
 		
-		JButton queryButton = new JButton("Send");
+		JButton queryButton = new JButton("Senden");
 		queryButton.addActionListener(e -> {
 			if (!queryField.getText().equals("") && limitCheckBox.isSelected()) {
 				try {
-					transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID));
+					transmitter.transmit(new Message(queryField.getText(), Integer.parseInt(lowerLimit.getText()), Integer.parseInt(upperLimit.getText()), iD, frameID, true));
 				}
 				catch (NumberFormatException exception) {
-					transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+					transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID, true));
 				}
 			}
 			else {
-				transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID));
+				transmitter.transmit(new Message(queryField.getText(), 0, 0, iD, frameID, true));
 			}
 		});
 		
@@ -182,7 +196,6 @@ public class DatabaseTab extends JPanel {
 //			@Override 
 //			public void keyTyped(KeyEvent event) {
 //				String s = ((JFormattedTextField) event.getComponent()).getText();
-//				System.out.println(s);
 //				if (old.length() == 1 && (event.getKeyChar() == '' || event.getKeyChar() == '')) {
 //					((JFormattedTextField) event.getComponent()).setText("0");
 //				}
@@ -195,7 +208,6 @@ public class DatabaseTab extends JPanel {
 //					}
 //				}
 //				else {
-//					System.out.println(((JFormattedTextField) event.getComponent()).getText().length());
 //					if (((JFormattedTextField) event.getComponent()).getText().length() == 1) {
 //						oneChar = true;
 //					}
@@ -203,7 +215,6 @@ public class DatabaseTab extends JPanel {
 //						oneChar = false;
 //					}
 //				}
-//				System.out.println(oneChar);
 //				old = ((JFormattedTextField) event.getComponent()).getText();
 //			}
 //		};
@@ -224,6 +235,10 @@ public class DatabaseTab extends JPanel {
 		add(connectionLabel, BorderLayout.SOUTH);
 	}
 	
+	/**
+	 * Erstellt den Baum
+	 * @param tableNames Die Namen der Tabellen
+	 */
 	private void createTree(String[] tableNames) {
 		DefaultMutableTreeNode root = new DefaultMutableTreeNode(getName());
 		for(String name : tableNames) {
@@ -232,6 +247,10 @@ public class DatabaseTab extends JPanel {
 		((DefaultTreeModel) databaseTree.getModel()).setRoot(root);
 	}
 	
+	/**
+	 * Setzt den Tabelleninhalt
+	 * @param table Die anzuzeigende Tabelle
+	 */
 	public void setTableContent(Table table) {
 		String[][] content = table.getTableContent();
 		dataTable.setModel(new DefaultTableModel(content.length, content[0].length) {
@@ -250,32 +269,66 @@ public class DatabaseTab extends JPanel {
 		}
 	}
 	
+	/**
+	 * Gibt den namen des Tabs zurück
+	 * @return Der Name des Tabs
+	 */
 	public String getTabName() {
 		return name;
 	}
 	
+	/**
+	 * Gibt das Suffix des Tabs zurück
+	 * @return
+	 */
 	public String getSuffix() {
 		return suffix;
 	}
-
+	
+	/**
+	 * Setzt das Suffix des Tabs
+	 * @param suffix Das Suffix des Tabs
+	 */
 	public void setSuffix(String suffix) {
 		this.suffix = suffix;
 	}
 	
+	/**
+	 * Gibt den Titel des Tabs zurück
+	 * @return Titel des Tabs (Name + Suffix)
+	 */
 	public String getTabTitle() {
 		return name + suffix;
 	}
 	
+	/**
+	 * Gibt die ID des Tabs zurück
+	 * @return Die ID des Tabs
+	 */
 	public int getID() {
 		return iD;
 	}
 	
+	/**
+	 * Setzt die FrameID auf dessen Frame sich der Tab befindet
+	 * @param iD Die FrameID
+	 */
 	public void setFrameID(int iD) {
 		frameID = iD;
 	}
-
+	
+	/**
+	 * Schließt die Connection
+	 */
 	public void closeConnection() {
-		// TODO Auto-generated method stub
-		
+		transmitter.transmit(new Message(iD));
+	}
+	
+	/**
+	 * Gibt die breite des Baumes zurück
+	 * @return Die Breite des Baumes
+	 */
+	public int getTreeWidth() {
+		return splitPane.getDividerLocation();
 	}
 }
