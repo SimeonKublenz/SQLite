@@ -3,6 +3,7 @@ package de.szut.dqi12.sqlitebrowser.view;
 import java.awt.AWTEvent;
 import java.awt.BorderLayout;
 import java.awt.MenuItem;
+import java.awt.PopupMenu;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
@@ -32,6 +33,7 @@ public class Frame extends JFrame {
 	private Transmitter transmitter;
 	private DatabaseTab defaultTab;
 	private JFileChooser file;
+	private int selectedTab;
 	private GUI gui;
 	private HashMap<Integer, DatabaseTab> tabs = new HashMap<Integer, DatabaseTab>();
 	
@@ -83,12 +85,11 @@ public class Frame extends JFrame {
 		JLayeredPane mainPanel = new JLayeredPane();
 		mainPanel.setLayout(new BorderLayout(0, 0));
 		
-		NumeratedPopupMenu rightclickMenu = new NumeratedPopupMenu();
+		PopupMenu rightclickMenu = new PopupMenu();
 		
 		MenuItem newWindow = new MenuItem("In neues Fenster verschieben");
 		newWindow.addActionListener(e -> {
-			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
-			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(index);
+			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(selectedTab);
 			if (tab.getID() != -1) {
 				removeTab(tab.getID());
 				gui.createFrame(tab, new Settings(this.getBounds(), tab.getTreeWidth()));
@@ -100,8 +101,7 @@ public class Frame extends JFrame {
 		
 		MenuItem close = new MenuItem("Schlieﬂen");
 		close.addActionListener(e -> {
-			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
-			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(index);
+			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(selectedTab);
 			if (tab.getID() != -1) {
 				removeTab(tab.getID());
 				tab.closeConnection();
@@ -109,9 +109,8 @@ public class Frame extends JFrame {
 		});
 		MenuItem closeOther = new MenuItem("Andere Schlieﬂen");
 		closeOther.addActionListener(e -> {
-			int index = ((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber();
 			for (int i = 0; i < tabPane.getTabCount(); i++) {
-				if (i != index) {
+				if (i != selectedTab) {
 					DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(i);
 					removeTab(tab.getID());
 					tab.closeConnection();
@@ -145,7 +144,7 @@ public class Frame extends JFrame {
 					}
 					for (int i = 0; i < tabbedPane.getTabCount(); i++) {
 						if (tabbedPane.getBoundsAt(i).contains(event.getPoint())) {
-							rightclickMenu.setNumber(i);
+							selectedTab = i;
 							rightclickMenu.show(tabPane, event.getX(), event.getY());
 						}
 					}
@@ -177,7 +176,7 @@ public class Frame extends JFrame {
 		});
 		JMenuItem newFrame = new JMenuItem("neues Fenster");
 		newFrame.addActionListener(e -> {
-			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(((NumeratedPopupMenu)((MenuItem) e.getSource()).getParent()).getNumber());
+			DatabaseTab tab = (DatabaseTab) tabPane.getComponentAt(selectedTab);
 			gui.createFrame(new Settings(this.getBounds(), tab.getTreeWidth()));
 		});
 		JMenuItem closeDatabase = new JMenuItem("Schlieﬂen");
@@ -275,7 +274,6 @@ public class Frame extends JFrame {
 				suffix = "(" + count +")";
 			}
 		}
-		System.out.println(suffix);
 		return suffix;
 	}
 	

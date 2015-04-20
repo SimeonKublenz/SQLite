@@ -1,0 +1,7 @@
+#SQLite Browser Properties
+#Mon Apr 13 22:07:46 CEST 2015
+BaumBreite=170.0
+FensterBreite=800.0
+YPosition=155.0
+FensterHoehe=700.0
+XPosition=831.0

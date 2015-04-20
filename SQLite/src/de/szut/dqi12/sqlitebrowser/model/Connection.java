@@ -26,13 +26,12 @@ public class Connection {
 	 * @return das Datenbankobjekt der geladenen Datenbank
 	 */
 	public Database loadDatabase() {
-		boolean exception = false;
 		try {
 			connection = DriverManager.getConnection("jdbc:sqlite:" + file.getPath());
 			statement = connection.createStatement();
 		}
 		catch (SQLException e) {
-			exception = true;
+			return null;
 		}
 		
 		ArrayList<String> tables = new ArrayList<String>();
@@ -45,14 +44,9 @@ public class Connection {
 			res.close();
 		}
 		catch (SQLException e) {
-			exception = true;
-		}
-		if (!exception) {
-			return new Database(file.getName().substring(0, file.getName().lastIndexOf(".")) , tables.toArray(new String[tables.size()]));
-		}
-		else {
 			return null;
 		}
+		return new Database(file.getName().substring(0, file.getName().lastIndexOf(".")) , tables.toArray(new String[tables.size()]));
 	}
 	
 	/**
